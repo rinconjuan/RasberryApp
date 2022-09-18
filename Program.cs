@@ -1,0 +1,251 @@
+﻿using Modbus.Device;
+using Modbus.Serial;
+using Newtonsoft.Json;
+using RasberryApp;
+using System;
+using System.IO.Ports;
+using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace SerialPortHexCommunication
+{
+
+    public class Program
+    {
+
+
+        static string UrlLocalApi = "http://damian1628-001-site1.btempurl.com/GetRun";
+        static SerialPort port = new SerialPort();
+        public static bool ActEstado { get; set; }
+        public static ushort velocidad { get; set; }
+
+        public static bool PararRotor { get; set; }
+
+        public static SerialPortAdapter adapter = new SerialPortAdapter(port);
+
+        public static IModbusSerialMaster master = ModbusSerialMaster.CreateRtu(adapter);
+        static async Task Main(string[] args)
+        {
+            //port.PortName = "/dev/ttyUSB0";
+            //port.Parity = Parity.None;
+            //port.BaudRate = 9600;
+            //port.DataBits = 8;
+            //port.StopBits = StopBits.One;
+            //port.ReadTimeout = 200;
+            //port.WriteTimeout = 200;
+            //if (port.IsOpen)
+
+            //{
+            //    port.Close();
+            //    port.Dispose();
+            //}
+
+
+
+            Thread CnApi = new Thread(new ThreadStart(ConsultApiAsync));
+            CnApi.Start();
+
+
+            Thread RMotor = new Thread(new ThreadStart(RunMotor));
+            RMotor.Start();
+
+            Thread RotorBloqueado = new Thread(new ThreadStart(StopMotor));
+            RotorBloqueado.Start();
+
+            while (true)
+            {
+                RunAsync().GetAwaiter().GetResult();
+            }
+        }
+        public static void ConsultApiAsync()
+        {
+            while (true)
+            {
+                using (var client = new HttpClient())
+                {
+                    var response = client.GetAsync(UrlLocalApi).Result;
+                    var responcevelocidad = client.GetAsync("http://damian1628-001-site1.btempurl.com/GetVelocidad").Result;
+                    var responceBloquearRotor = client.GetAsync("http://damian1628-001-site1.btempurl.com/GetAccionSource").Result;
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var responseContent = response.Content;
+
+                        // by calling .Result you are synchronously reading the result
+                        string responseString = responseContent.ReadAsStringAsync().Result;
+                        var objResponse = JsonConvert.DeserializeObject<RespuestaRun>(responseString).Codigo;
+                        if (objResponse != ActEstado)
+                        {
+                            switch (objResponse)
+                            {
+                                case true:
+                                    Console.WriteLine(responseString);
+                                    Program.ActEstado = true;
+
+                                    break;
+                                case false:
+                                    Console.WriteLine("False");
+                                    Console.WriteLine(responseString);
+
+                                    Program.ActEstado = false;
+                                    break;
+                            }
+                        }
+
+                    }
+                    if (responcevelocidad.IsSuccessStatusCode)
+                    {
+                        var responseContent = responcevelocidad.Content;
+
+                        // by calling .Result you are synchronously reading the result
+                        string responseString = responseContent.ReadAsStringAsync().Result;
+                        var objResponse = JsonConvert.DeserializeObject<RespuestaVelocidad>(responseString).velocidad;
+                        if (objResponse != velocidad)
+                        {
+                            Program.velocidad = objResponse;
+                        }
+
+                    }
+                    if (responceBloquearRotor.IsSuccessStatusCode)
+                    {
+                        var responseContent = responceBloquearRotor.Content;
+                        string responseString = responseContent.ReadAsStringAsync().Result;
+                        var objResponse = JsonConvert.DeserializeObject<RespuestaAccionFuente>(responseString).DescripcionAccion;
+                        if(objResponse == "Run")
+                        {
+                            Program.PararRotor = true;
+                        }                        
+                    }
+
+                }
+            }
+
+        }
+
+        public static void ChangeVelocity()
+        {
+            byte slaveId = 1;
+            port.Open();
+            master.WriteSingleRegister(slaveId, 1, Program.velocidad);
+
+            port.Close();
+            port.Dispose();
+
+        }
+
+
+        public static void RunMotor()
+        {
+            bool bandera = true;
+
+            while (true)
+            {
+                //Console.WriteLine("RunMotor");
+                //if (Program.ActEstado)
+                //{
+                //    byte[] bytesToSend = new byte[8] { 0x01, 0x06, 0x00, 0x00, 0x00, 0x01, 0x48, 0x0A };  //$D0 $F2 $FF $00 $06  01 06 00 00 00 01 48 0A 
+
+                //    Console.WriteLine("Run t");
+                //    port.Open();
+                //    port.Write(bytesToSend, 0, bytesToSend.Length);
+                //    port.Close();
+                //    port.Dispose();
+                //    ChangeVelocity();
+                //}
+                //else
+                //{
+                //    byte[] bytesToSend = new byte[8] { 0x01, 0x06, 0x00, 0x00, 0x00, 0x00, 0x89, 0xCA };  //$D0 $F2 $FF $00 $06  01 06 00 00 00 01 48 0A 
+
+                //    Console.WriteLine("False t");
+                //    port.Open();
+                //    port.Write(bytesToSend, 0, bytesToSend.Length);
+                //    port.Close();
+                //    port.Dispose();
+                //}
+            }
+        }
+
+        public static void StopMotor()
+        {
+            while (true)
+            {
+                if (Program.PararRotor)
+                {
+                    // Se hace la conexión
+                    Console.BackgroundColor = ConsoleColor.Red;
+                    Thread.Sleep(12000);
+                    var finPrueba = ManagementSourceAsync();
+                    finPrueba.Wait();
+                    Console.BackgroundColor = ConsoleColor.Black;
+
+                }
+
+            }
+        }
+
+        public static async Task ManagementSourceAsync()
+        {
+            HttpClient httpClient = new HttpClient();
+            using var requestContent = new MultipartFormDataContent();            
+
+            requestContent.Add(new StringContent("Stop"));
+            HttpResponseMessage response = await httpClient.PostAsync("http://damian1628-001-site1.btempurl.com/ManagementSource", requestContent);
+            Program.PararRotor = false;
+        }
+
+
+        static async Task RunAsync()
+        {
+            HttpClient client = new HttpClient();
+            client.BaseAddress = new Uri("https://localhost:44393/");
+            client.DefaultRequestHeaders.Accept.Clear();
+            client.DefaultRequestHeaders.Accept.Add(
+                new MediaTypeWithQualityHeaderValue("application/json"));
+
+            try
+            {
+                Console.WriteLine($"Subiendo Imagen...");
+                var url = await CreateProductAsync();
+                Console.WriteLine($"Respuesta Servidor {url}");
+                System.Threading.Thread.Sleep(3000);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+        }
+
+
+        static async Task<string> CreateProductAsync()
+        {
+            var pathGeneral = AppDomain.CurrentDomain.BaseDirectory;
+            var imgName = pathGeneral + "file.bmp";
+
+            using (WebClient webClient = new WebClient())
+            {
+                if (File.Exists(imgName))
+                    File.Delete(imgName);
+                var routCircutor = "http://169.254.1.49:502/tft.bmp?" + DateTime.Now.Ticks.ToString();
+                byte[] data = webClient.DownloadData(routCircutor);
+                File.WriteAllBytes(imgName, data);
+                Console.WriteLine("Data imagen" + data[0].ToString()); ;
+
+            }
+
+            var fileRout = imgName;
+            var fileName = Path.GetFileName(fileRout);
+
+            HttpClient httpClient = new HttpClient();
+            using var requestContent = new MultipartFormDataContent();
+            using var fileStream = File.OpenRead(fileRout);
+
+            requestContent.Add(new StreamContent(fileStream), "fileup", fileName);
+            HttpResponseMessage response = await httpClient.PostAsync("https://connectionapi.azurewebsites.net/CargarImagen", requestContent);
+            // return URI of the created resource.
+            return response.StatusCode.ToString();
+        }
+    }
+}
