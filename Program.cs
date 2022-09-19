@@ -30,19 +30,20 @@ namespace SerialPortHexCommunication
         public static IModbusSerialMaster master = ModbusSerialMaster.CreateRtu(adapter);
         static async Task Main(string[] args)
         {
-            //port.PortName = "/dev/ttyUSB0";
-            //port.Parity = Parity.None;
-            //port.BaudRate = 9600;
-            //port.DataBits = 8;
-            //port.StopBits = StopBits.One;
-            //port.ReadTimeout = 200;
-            //port.WriteTimeout = 200;
-            //if (port.IsOpen)
+            port.PortName = "/dev/ttyUSB0";
+            //port.PortName = "COM11";
+            port.Parity = Parity.None;
+            port.BaudRate = 9600;
+            port.DataBits = 8;
+            port.StopBits = StopBits.One;
+            port.ReadTimeout = 200;
+            port.WriteTimeout = 200;
+            if (port.IsOpen)
 
-            //{
-            //    port.Close();
-            //    port.Dispose();
-            //}
+            {
+                port.Close();
+                port.Dispose();
+            }
 
 
 
@@ -55,6 +56,9 @@ namespace SerialPortHexCommunication
 
             Thread RotorBloqueado = new Thread(new ThreadStart(StopMotor));
             RotorBloqueado.Start();
+
+            Thread accion = new Thread(new ThreadStart(UpdateAccion));
+            accion.Start();
 
             while (true)
             {
@@ -133,7 +137,7 @@ namespace SerialPortHexCommunication
 
             port.Close();
             port.Dispose();
-
+                    
         }
 
 
@@ -143,28 +147,28 @@ namespace SerialPortHexCommunication
 
             while (true)
             {
-                //Console.WriteLine("RunMotor");
-                //if (Program.ActEstado)
-                //{
-                //    byte[] bytesToSend = new byte[8] { 0x01, 0x06, 0x00, 0x00, 0x00, 0x01, 0x48, 0x0A };  //$D0 $F2 $FF $00 $06  01 06 00 00 00 01 48 0A 
+                Console.WriteLine("RunMotor");
+                if (Program.ActEstado)
+                {
+                    byte[] bytesToSend = new byte[8] { 0x01, 0x06, 0x00, 0x00, 0x00, 0x01, 0x48, 0x0A };  //$D0 $F2 $FF $00 $06  01 06 00 00 00 01 48 0A 
 
-                //    Console.WriteLine("Run t");
-                //    port.Open();
-                //    port.Write(bytesToSend, 0, bytesToSend.Length);
-                //    port.Close();
-                //    port.Dispose();
-                //    ChangeVelocity();
-                //}
-                //else
-                //{
-                //    byte[] bytesToSend = new byte[8] { 0x01, 0x06, 0x00, 0x00, 0x00, 0x00, 0x89, 0xCA };  //$D0 $F2 $FF $00 $06  01 06 00 00 00 01 48 0A 
+                    Console.WriteLine("Run t");
+                    port.Open();
+                    port.Write(bytesToSend, 0, bytesToSend.Length);
+                    port.Close();
+                    port.Dispose();
+                    ChangeVelocity();
+                }
+                else
+                {
+                    byte[] bytesToSend = new byte[8] { 0x01, 0x06, 0x00, 0x00, 0x00, 0x00, 0x89, 0xCA };  //$D0 $F2 $FF $00 $06  01 06 00 00 00 01 48 0A 
 
-                //    Console.WriteLine("False t");
-                //    port.Open();
-                //    port.Write(bytesToSend, 0, bytesToSend.Length);
-                //    port.Close();
-                //    port.Dispose();
-                //}
+                    Console.WriteLine("False t");
+                    port.Open();
+                    port.Write(bytesToSend, 0, bytesToSend.Length);
+                    port.Close();
+                    port.Dispose();
+                }
             }
         }
 
@@ -200,7 +204,7 @@ namespace SerialPortHexCommunication
         static async Task RunAsync()
         {
             HttpClient client = new HttpClient();
-            client.BaseAddress = new Uri("https://localhost:44393/");
+            client.BaseAddress = new Uri("http://damian1628-001-site1.btempurl.com/");
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Accept.Add(
                 new MediaTypeWithQualityHeaderValue("application/json"));
@@ -243,9 +247,78 @@ namespace SerialPortHexCommunication
             using var fileStream = File.OpenRead(fileRout);
 
             requestContent.Add(new StreamContent(fileStream), "fileup", fileName);
-            HttpResponseMessage response = await httpClient.PostAsync("https://connectionapi.azurewebsites.net/CargarImagen", requestContent);
+            HttpResponseMessage response = await httpClient.PostAsync("http://damian1628-001-site1.btempurl.com/CargarImagen", requestContent);
             // return URI of the created resource.
             return response.StatusCode.ToString();
+        }
+
+        static async Task<string> ReadAccion()
+        {
+            string respuesta = "";
+            Console.WriteLine("Leyendo Accion..");
+            HttpClient httpClient = new HttpClient();
+            HttpResponseMessage response = await httpClient.GetAsync("http://damian1628-001-site1.btempurl.com/Acciones");
+            string responseBody = await response.Content.ReadAsStringAsync();
+            if (response.StatusCode.ToString() == "BadRequest")
+            {
+                var objError = JsonConvert.DeserializeObject<MessageError>(responseBody);
+                if (objError.codigoError == "CCTGAC01")
+                {
+                    respuesta = objError.mensajeError.ToString();
+                    return respuesta;
+                }
+                else
+                {
+                    return "Error desconocido";
+                }
+            }
+            else
+            {
+                var objResponse = JsonConvert.DeserializeObject<RespuestaAccion>(responseBody).CodigoKey;
+                var accionNueva = "";
+                switch (objResponse)
+                {
+                    case "0":
+                        accionNueva = objResponse + "." + DateTime.Now.Ticks.ToString();
+                        break;
+                    case "1":
+                        accionNueva = objResponse + "." + DateTime.Now.Ticks.ToString();
+                        break;
+                    case "2":
+                        accionNueva = objResponse + "." + DateTime.Now.Ticks.ToString();
+                        break;
+                    case "3":
+                        accionNueva = objResponse + "." + DateTime.Now.Ticks.ToString();
+                        break;
+                    case "4":
+                        accionNueva = objResponse + "." + DateTime.Now.Ticks.ToString();
+                        break;
+                    case "5":
+                        accionNueva = objResponse + "." + DateTime.Now.Ticks.ToString();
+                        break;
+                }
+                HttpResponseMessage accionExe = await httpClient.GetAsync("http://169.254.1.49:502/key.htm?F=" + accionNueva);
+                respuesta = "Accion ejecutada";
+            }
+            return respuesta;
+        }
+
+        public static void UpdateAccion()
+        {
+            while (true)
+            {
+                try
+                {
+                    Console.WriteLine($"Actualizando acción...");
+                    var accion = ReadAccion().Result;
+                    Console.WriteLine($"Respuesta Accion {accion}");
+                    System.Threading.Thread.Sleep(1000);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
+            }
         }
     }
 }
