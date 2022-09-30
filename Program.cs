@@ -3,6 +3,7 @@ using Modbus.Serial;
 using Newtonsoft.Json;
 using RasberryApp;
 using System;
+using System.Device.Gpio;
 using System.IO.Ports;
 using System.Net;
 using System.Net.Http;
@@ -18,7 +19,7 @@ namespace SerialPortHexCommunication
     {
 
 
-        static string UrlLocalApi = "http://damian1628-001-site1.btempurl.com/GetRun";
+        static string UrlLocalApi = "http://damian16-001-site1.htempurl.com/GetRun";
         static SerialPort port = new SerialPort();
         public static bool ActEstado { get; set; }
         public static ushort velocidad { get; set; }
@@ -28,8 +29,13 @@ namespace SerialPortHexCommunication
         public static SerialPortAdapter adapter = new SerialPortAdapter(port);
 
         public static IModbusSerialMaster master = ModbusSerialMaster.CreateRtu(adapter);
+
+        public static int pin = 17;
+        public static GpioController controller = new GpioController();
+        
         static async Task Main(string[] args)
         {
+            controller.OpenPin(pin, PinMode.Output);
             port.PortName = "/dev/ttyUSB0";
             //port.PortName = "COM11";
             port.Parity = Parity.None;
@@ -72,8 +78,8 @@ namespace SerialPortHexCommunication
                 using (var client = new HttpClient())
                 {
                     var response = client.GetAsync(UrlLocalApi).Result;
-                    var responcevelocidad = client.GetAsync("http://damian1628-001-site1.btempurl.com/GetVelocidad").Result;
-                    var responceBloquearRotor = client.GetAsync("http://damian1628-001-site1.btempurl.com/GetAccionSource").Result;
+                    var responcevelocidad = client.GetAsync("http://damian16-001-site1.htempurl.com/GetVelocidad").Result;
+                    var responceBloquearRotor = client.GetAsync("http://damian16-001-site1.htempurl.com/GetAccionSource").Result;
                     if (response.IsSuccessStatusCode)
                     {
                         var responseContent = response.Content;
@@ -178,12 +184,14 @@ namespace SerialPortHexCommunication
             {
                 if (Program.PararRotor)
                 {
-                    // Se hace la conexión
-                    Console.BackgroundColor = ConsoleColor.Red;
-                    Thread.Sleep(12000);
+
+
+                    controller.Write(pin, PinValue.High);
+                    Thread.Sleep(5000);
+                    controller.Write(pin, PinValue.Low);
                     var finPrueba = ManagementSourceAsync();
                     finPrueba.Wait();
-                    Console.BackgroundColor = ConsoleColor.Black;
+                    Program.PararRotor = false;
 
                 }
 
@@ -196,7 +204,7 @@ namespace SerialPortHexCommunication
             using var requestContent = new MultipartFormDataContent();            
 
             requestContent.Add(new StringContent("Stop"));
-            HttpResponseMessage response = await httpClient.PostAsync("http://damian1628-001-site1.btempurl.com/ManagementSource", requestContent);
+            HttpResponseMessage response = await httpClient.PostAsync("http://damian16-001-site1.htempurl.com/ManagementSource", requestContent);
             Program.PararRotor = false;
         }
 
@@ -204,7 +212,7 @@ namespace SerialPortHexCommunication
         static async Task RunAsync()
         {
             HttpClient client = new HttpClient();
-            client.BaseAddress = new Uri("http://damian1628-001-site1.btempurl.com/");
+            client.BaseAddress = new Uri("http://damian16-001-site1.htempurl.com/");
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Accept.Add(
                 new MediaTypeWithQualityHeaderValue("application/json"));
@@ -247,7 +255,7 @@ namespace SerialPortHexCommunication
             using var fileStream = File.OpenRead(fileRout);
 
             requestContent.Add(new StreamContent(fileStream), "fileup", fileName);
-            HttpResponseMessage response = await httpClient.PostAsync("http://damian1628-001-site1.btempurl.com/CargarImagen", requestContent);
+            HttpResponseMessage response = await httpClient.PostAsync("http://damian16-001-site1.htempurl.com/CargarImagen", requestContent);
             // return URI of the created resource.
             return response.StatusCode.ToString();
         }
@@ -257,7 +265,7 @@ namespace SerialPortHexCommunication
             string respuesta = "";
             Console.WriteLine("Leyendo Accion..");
             HttpClient httpClient = new HttpClient();
-            HttpResponseMessage response = await httpClient.GetAsync("http://damian1628-001-site1.btempurl.com/Acciones");
+            HttpResponseMessage response = await httpClient.GetAsync("http://damian16-001-site1.htempurl.com/Acciones");
             string responseBody = await response.Content.ReadAsStringAsync();
             if (response.StatusCode.ToString() == "BadRequest")
             {
