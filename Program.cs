@@ -2,15 +2,10 @@
 using Modbus.Serial;
 using Newtonsoft.Json;
 using RasberryApp;
-using System;
 using System.Device.Gpio;
 using System.IO.Ports;
 using System.Net;
-using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Net.Http.Json;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SerialPortHexCommunication
 {
@@ -32,105 +27,122 @@ namespace SerialPortHexCommunication
 
         public static int pin = 17;
         public static GpioController controller = new GpioController();
-        
+        public static readonly HttpClient clienthttp = new HttpClient();
+
         static async Task Main(string[] args)
         {
-            controller.OpenPin(pin, PinMode.Output);
-            port.PortName = "/dev/ttyUSB0";
-            //port.PortName = "COM11";
-            port.Parity = Parity.None;
-            port.BaudRate = 9600;
-            port.DataBits = 8;
-            port.StopBits = StopBits.One;
-            port.ReadTimeout = 200;
-            port.WriteTimeout = 200;
-            if (port.IsOpen)
+            //controller.OpenPin(pin, PinMode.Output);
+            //port.PortName = "/dev/ttyUSB0";
+            ////port.PortName = "COM11";
+            //port.Parity = Parity.None;
+            //port.BaudRate = 9600;
+            //port.DataBits = 8;
+            //port.StopBits = StopBits.One;
+            //port.ReadTimeout = 200;
+            //port.WriteTimeout = 200;
+            //if (port.IsOpen)
 
-            {
-                port.Close();
-                port.Dispose();
-            }
-
-
-
-            Thread CnApi = new Thread(new ThreadStart(ConsultApiAsync));
-            CnApi.Start();
+            //{
+            //    port.Close();
+            //    port.Dispose();
+            //}
 
 
-            Thread RMotor = new Thread(new ThreadStart(RunMotor));
-            RMotor.Start();
 
-            Thread RotorBloqueado = new Thread(new ThreadStart(StopMotor));
-            RotorBloqueado.Start();
+            //Thread CnApi = new Thread(new ThreadStart(ConsultApiAsync));
+            //CnApi.Start();
 
-            Thread accion = new Thread(new ThreadStart(UpdateAccion));
-            accion.Start();
+
+            //Thread RMotor = new Thread(new ThreadStart(RunMotor));
+            //RMotor.Start();
+
+            //Thread RotorBloqueado = new Thread(new ThreadStart(StopMotor));
+            //RotorBloqueado.Start();
+
+            //Thread accion = new Thread(new ThreadStart(UpdateAccion));
+            //accion.Start();
 
             while (true)
             {
+                ConsultApiAsync().GetAwaiter().GetResult();
                 RunAsync().GetAwaiter().GetResult();
             }
         }
-        public static void ConsultApiAsync()
+        public static async Task ConsultApiAsync()
         {
             while (true)
             {
-                using (var client = new HttpClient())
+                try
                 {
-                    var response = client.GetAsync(UrlLocalApi).Result;
-                    var responcevelocidad = client.GetAsync("http://damian16-001-site1.htempurl.com/GetVelocidad").Result;
-                    var responceBloquearRotor = client.GetAsync("http://damian16-001-site1.htempurl.com/GetAccionSource").Result;
-                    if (response.IsSuccessStatusCode)
-                    {
-                        var responseContent = response.Content;
+                    HttpResponseMessage response = await clienthttp.GetAsync(UrlLocalApi);
+                    response.EnsureSuccessStatusCode();
+                    string responseBody = await response.Content.ReadAsStringAsync();
+                    // Above three lines can be replaced with new helper method below
+                    // string responseBody = await client.GetStringAsync(uri);
 
-                        // by calling .Result you are synchronously reading the result
-                        string responseString = responseContent.ReadAsStringAsync().Result;
-                        var objResponse = JsonConvert.DeserializeObject<RespuestaRun>(responseString).Codigo;
-                        if (objResponse != ActEstado)
-                        {
-                            switch (objResponse)
-                            {
-                                case true:
-                                    Console.WriteLine(responseString);
-                                    Program.ActEstado = true;
-
-                                    break;
-                                case false:
-                                    Console.WriteLine("False");
-                                    Console.WriteLine(responseString);
-
-                                    Program.ActEstado = false;
-                                    break;
-                            }
-                        }
-
-                    }
-                    if (responcevelocidad.IsSuccessStatusCode)
-                    {
-                        var responseContent = responcevelocidad.Content;
-
-                        // by calling .Result you are synchronously reading the result
-                        string responseString = responseContent.ReadAsStringAsync().Result;
-                        var objResponse = JsonConvert.DeserializeObject<RespuestaVelocidad>(responseString).velocidad;
-                        if (objResponse != velocidad)
-                        {
-                            Program.velocidad = objResponse;
-                        }
-
-                    }
-                    if (responceBloquearRotor.IsSuccessStatusCode)
-                    {
-                        var responseContent = responceBloquearRotor.Content;
-                        string responseString = responseContent.ReadAsStringAsync().Result;
-                        var objResponse = JsonConvert.DeserializeObject<RespuestaAccionFuente>(responseString).DescripcionAccion;
-                        if(objResponse == "Run")
-                        {
-                            Program.PararRotor = true;
-                        }                        
-                    }
-
+                    Console.WriteLine(responseBody);
                 }
+                catch (HttpRequestException e)
+                {
+                    Console.WriteLine("\nException Caught!");
+                    Console.WriteLine("Message :{0} ", e.Message);
+                }
+                //using (var client = new HttpClient())
+                //{
+                //    var response = client.GetAsync(UrlLocalApi).Result;
+                //    var responcevelocidad = client.GetAsync("http://damian16-001-site1.htempurl.com/GetVelocidad").Result;
+                //    var responceBloquearRotor = client.GetAsync("http://damian16-001-site1.htempurl.com/GetAccionSource").Result;
+                //    if (response.IsSuccessStatusCode)
+                //    {
+                //        var responseContent = response.Content;
+
+                //        // by calling .Result you are synchronously reading the result
+                //        string responseString = responseContent.ReadAsStringAsync().Result;
+                //        var objResponse = JsonConvert.DeserializeObject<RespuestaRun>(responseString).Codigo;
+                //        if (objResponse != ActEstado)
+                //        {
+                //            switch (objResponse)
+                //            {
+                //                case true:
+                //                    Console.WriteLine(responseString);
+                //                    Program.ActEstado = true;
+
+                //                    break;
+                //                case false:
+                //                    Console.WriteLine("False");
+                //                    Console.WriteLine(responseString);
+
+                //                    Program.ActEstado = false;
+                //                    break;
+                //            }
+                //        }
+
+                //    }
+                //    if (responcevelocidad.IsSuccessStatusCode)
+                //    {
+                //        var responseContent = responcevelocidad.Content;
+
+                //        // by calling .Result you are synchronously reading the result
+                //        string responseString = responseContent.ReadAsStringAsync().Result;
+                //        var objResponse = JsonConvert.DeserializeObject<RespuestaVelocidad>(responseString).velocidad;
+                //        if (objResponse != velocidad)
+                //        {
+                //            Program.velocidad = objResponse;
+                //        }
+
+                //    }
+                //    if (responceBloquearRotor.IsSuccessStatusCode)
+                //    {
+                //        var responseContent = responceBloquearRotor.Content;
+                //        string responseString = responseContent.ReadAsStringAsync().Result;
+                //        var objResponse = JsonConvert.DeserializeObject<RespuestaAccionFuente>(responseString).DescripcionAccion;
+                //        if(objResponse == "Run")
+                //        {
+                //            Program.PararRotor = true;
+                //        }                        
+                //    }
+
+                //}
             }
 
         }
@@ -140,6 +152,7 @@ namespace SerialPortHexCommunication
             byte slaveId = 1;
             port.Open();
             master.WriteSingleRegister(slaveId, 1, Program.velocidad);
+            Console.WriteLine("CAMBIO DE VELOCIDAD");
 
             port.Close();
             port.Dispose();
@@ -153,12 +166,12 @@ namespace SerialPortHexCommunication
 
             while (true)
             {
-                Console.WriteLine("RunMotor");
+                
                 if (Program.ActEstado)
                 {
                     byte[] bytesToSend = new byte[8] { 0x01, 0x06, 0x00, 0x00, 0x00, 0x01, 0x48, 0x0A };  //$D0 $F2 $FF $00 $06  01 06 00 00 00 01 48 0A 
 
-                    Console.WriteLine("Run t");
+                    Console.WriteLine("CORRIENDO MOTOR");
                     port.Open();
                     port.Write(bytesToSend, 0, bytesToSend.Length);
                     port.Close();
@@ -169,7 +182,7 @@ namespace SerialPortHexCommunication
                 {
                     byte[] bytesToSend = new byte[8] { 0x01, 0x06, 0x00, 0x00, 0x00, 0x00, 0x89, 0xCA };  //$D0 $F2 $FF $00 $06  01 06 00 00 00 01 48 0A 
 
-                    Console.WriteLine("False t");
+                    Console.WriteLine("MOTOR PAUSADO");
                     port.Open();
                     port.Write(bytesToSend, 0, bytesToSend.Length);
                     port.Close();
