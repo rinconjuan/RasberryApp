@@ -198,9 +198,9 @@ namespace RasberryApp
                 {
                     if (Program.PararRotor)
                     {
-                        //controller.Write(pin, PinValue.High);
+                        controller.Write(pin, PinValue.High);
                         Thread.Sleep(5000);
-                        //controller.Write(pin, PinValue.Low);
+                        controller.Write(pin, PinValue.Low);
                         var finPrueba = ManagementSourceAsync();
                         finPrueba.Wait();
                         Program.PararRotor = false;
@@ -270,10 +270,19 @@ namespace RasberryApp
             using var requestContent = new MultipartFormDataContent();
             using var fileStream = File.OpenRead(fileRout);
 
-            requestContent.Add(new StreamContent(fileStream), "fileup", fileName);
-            HttpResponseMessage response = await httpClient.PostAsync("http://damian16-001-site1.htempurl.com/CargarImagen", requestContent);
-            // return URI of the created resource.
-            return response.StatusCode.ToString();
+            if (Program.PararRotor)
+            {
+                requestContent.Add(new StreamContent(fileStream), "fileup", fileName);
+                HttpResponseMessage response = await httpClient.PostAsync("http://damian16-001-site1.htempurl.com/CargarRegistro", requestContent);
+                return response.StatusCode.ToString();
+            }
+            else
+            {
+                requestContent.Add(new StreamContent(fileStream), "fileup", fileName);
+                HttpResponseMessage response = await httpClient.PostAsync("http://damian16-001-site1.htempurl.com/CargarImagen", requestContent);
+                return response.StatusCode.ToString();
+            }     
+           
         }
 
         static async Task<string> ReadAccion()
