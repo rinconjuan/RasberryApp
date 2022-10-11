@@ -198,12 +198,16 @@ namespace RasberryApp
                 {
                     if (Program.PararRotor)
                     {
+                        Console.WriteLine("ROTOR BLOQUEADO");
+                        Console.BackgroundColor = ConsoleColor.Red;
                         controller.Write(pin, PinValue.High);
-                        Thread.Sleep(5000);
+                        Thread.Sleep(10000);
                         controller.Write(pin, PinValue.Low);
                         var finPrueba = ManagementSourceAsync();
                         finPrueba.Wait();
                         Program.PararRotor = false;
+                        Console.WriteLine("ROTOR DESBLOQUEADO");
+
                     }
                 }
                 catch(Exception ex)
@@ -272,6 +276,9 @@ namespace RasberryApp
 
             if (Program.PararRotor)
             {
+                Console.WriteLine("IMAGEN REGISTROS");
+                Console.BackgroundColor = ConsoleColor.Green;
+
                 requestContent.Add(new StreamContent(fileStream), "fileup", fileName);
                 HttpResponseMessage response = await httpClient.PostAsync("http://damian16-001-site1.htempurl.com/CargarRegistro", requestContent);
                 return response.StatusCode.ToString();
