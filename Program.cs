@@ -201,7 +201,7 @@ namespace RasberryApp
                         Console.WriteLine("ROTOR BLOQUEADO");
                         Console.BackgroundColor = ConsoleColor.Red;
                         controller.Write(pin, PinValue.High);
-                        Thread.Sleep(10000);
+                        Thread.Sleep(8000);
                         controller.Write(pin, PinValue.Low);
                         var finPrueba = ManagementSourceAsync();
                         finPrueba.Wait();
