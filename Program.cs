@@ -242,7 +242,7 @@ namespace RasberryApp
                 Console.WriteLine($"Subiendo Imagen...");
                 var url = await CreateProductAsync();
                 Console.WriteLine($"Respuesta Servidor {url}");
-                System.Threading.Thread.Sleep(3000);
+                System.Threading.Thread.Sleep(1000);
             }
             catch (Exception e)
             {
