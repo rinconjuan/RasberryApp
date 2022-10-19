@@ -255,6 +255,7 @@ namespace RasberryApp
         {
             var pathGeneral = AppDomain.CurrentDomain.BaseDirectory;
             var imgName = pathGeneral + "file.bmp";
+            var respuestaFinal = "";
 
             using (WebClient webClient = new WebClient())
             {
@@ -276,19 +277,29 @@ namespace RasberryApp
 
             if (Program.PararRotor)
             {
-                Console.WriteLine("IMAGEN REGISTROS");
-                Console.BackgroundColor = ConsoleColor.Green;
+                try
+                {
+                    Console.WriteLine("IMAGEN REGISTROS");
+                    Console.BackgroundColor = ConsoleColor.Green;
 
-                requestContent.Add(new StreamContent(fileStream), "fileup", fileName);
-                HttpResponseMessage response = await httpClient.PostAsync("http://damian16-001-site1.htempurl.com/CargarRegistro", requestContent);
-                return response.StatusCode.ToString();
+                    requestContent.Add(new StreamContent(fileStream), "fileup", fileName);
+                    requestContent.Add(new StringContent("BLOQ"));
+
+                    HttpResponseMessage responseReg = await httpClient.PostAsync("http://damian16-001-site1.htempurl.com/CargarRegistro", requestContent);
+                    respuestaFinal += responseReg.StatusCode.ToString();
+                }
+                catch (Exception ex)
+                {
+                    respuestaFinal += ex.InnerException.ToString();
+                }                
             }
-            else
-            {
-                requestContent.Add(new StreamContent(fileStream), "fileup", fileName);
-                HttpResponseMessage response = await httpClient.PostAsync("http://damian16-001-site1.htempurl.com/CargarImagen", requestContent);
-                return response.StatusCode.ToString();
-            }     
+            
+            requestContent.Add(new StreamContent(fileStream), "fileup", fileName);
+            requestContent.Add(new StringContent("NORM"));
+            HttpResponseMessage response = await httpClient.PostAsync("http://damian16-001-site1.htempurl.com/CargarImagen", requestContent);
+           
+            respuestaFinal += response.StatusCode.ToString();
+            return respuestaFinal;                
            
         }
 
