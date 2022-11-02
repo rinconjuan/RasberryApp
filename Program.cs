@@ -280,13 +280,17 @@ namespace RasberryApp
                 Console.BackgroundColor = ConsoleColor.Green;
 
                 requestContent.Add(new StreamContent(fileStream), "fileup", fileName);
-                HttpResponseMessage response = await httpClient.PostAsync("http://damian16-001-site1.htempurl.com/CargarRegistro", requestContent);
+                requestContent.Add(new StringContent("NOM"), "modo", "NOM");
+
+                HttpResponseMessage response = await httpClient.PostAsync("http://damian16-001-site1.htempurl.com/UploadFile", requestContent);
                 return response.StatusCode.ToString();
             }
             else
             {
                 requestContent.Add(new StreamContent(fileStream), "fileup", fileName);
-                HttpResponseMessage response = await httpClient.PostAsync("http://damian16-001-site1.htempurl.com/CargarImagen", requestContent);
+                requestContent.Add(new StringContent("BLQ"), "modo", "BLQ");
+
+                HttpResponseMessage response = await httpClient.PostAsync("http://damian16-001-site1.htempurl.com/UploadFile", requestContent);
                 return response.StatusCode.ToString();
             }     
            
