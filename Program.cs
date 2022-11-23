@@ -274,26 +274,26 @@ namespace RasberryApp
             using var requestContent = new MultipartFormDataContent();
             using var fileStream = File.OpenRead(fileRout);
 
-            if (Program.PararRotor)
-            {
-                Console.WriteLine("IMAGEN REGISTROS");
-                Console.BackgroundColor = ConsoleColor.Green;
+            
+            Console.WriteLine("IMAGEN REGISTROS");
+            Console.BackgroundColor = ConsoleColor.Green;
 
-                requestContent.Add(new StreamContent(fileStream), "fileup", fileName);
-                requestContent.Add(new StringContent("NOM"), "modo", "NOM");
+            requestContent.Add(new StreamContent(fileStream), "fileup", fileName);
+            requestContent.Add(new StringContent("NOM"), "modo", "NOM");
 
-                HttpResponseMessage response = await httpClient.PostAsync("http://damian16-001-site1.htempurl.com/UploadFile", requestContent);
-                return response.StatusCode.ToString();
-            }
-            else
+            HttpResponseMessage response = await httpClient.PostAsync("http://damian16-001-site1.htempurl.com/UploadFile", requestContent);
+            
+
+            if(Program.PararRotor)
             {
                 requestContent.Add(new StreamContent(fileStream), "fileup", fileName);
                 requestContent.Add(new StringContent("BLQ"), "modo", "BLQ");
 
-                HttpResponseMessage response = await httpClient.PostAsync("http://damian16-001-site1.htempurl.com/UploadFile", requestContent);
-                return response.StatusCode.ToString();
-            }     
-           
+                HttpResponseMessage responsebloq = await httpClient.PostAsync("http://damian16-001-site1.htempurl.com/UploadFile", requestContent);
+                return responsebloq.StatusCode.ToString();
+            }
+
+            return response.StatusCode.ToString();
         }
 
         static async Task<string> ReadAccion()
