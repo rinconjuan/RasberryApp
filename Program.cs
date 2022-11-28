@@ -32,7 +32,7 @@ namespace RasberryApp
         static async Task Main(string[] args)
         {
             try
-            {
+            {   
                 controller.OpenPin(pin, PinMode.Output);
                 port.PortName = "/dev/ttyUSB0";
                 //port.PortName = "COM11";
@@ -51,7 +51,7 @@ namespace RasberryApp
             catch(Exception ex)
             {
                 Console.WriteLine("No hay puerto disponible");
-            }           
+            }
 
 
 
@@ -275,21 +275,23 @@ namespace RasberryApp
             using var fileStream = File.OpenRead(fileRout);
 
             
-            Console.WriteLine("IMAGEN REGISTROS");
+            
             Console.BackgroundColor = ConsoleColor.Green;
 
             requestContent.Add(new StreamContent(fileStream), "fileup", fileName);
             requestContent.Add(new StringContent("NOM"), "modo", "NOM");
 
-            HttpResponseMessage response = await httpClient.PostAsync("http://damian16-001-site1.htempurl.com/UploadFile", requestContent);
+
+            HttpResponseMessage response = await httpClient.PostAsync("https://localhost:44393/CargarImagen?modo=NOM", requestContent);
             
 
             if(Program.PararRotor)
             {
+                Console.WriteLine("IMAGEN REGISTROS");
                 requestContent.Add(new StreamContent(fileStream), "fileup", fileName);
                 requestContent.Add(new StringContent("BLQ"), "modo", "BLQ");
 
-                HttpResponseMessage responsebloq = await httpClient.PostAsync("http://damian16-001-site1.htempurl.com/UploadFile", requestContent);
+                HttpResponseMessage responsebloq = await httpClient.PostAsync("http://damian16-001-site1.htempurl.com/CargarImagen?modo=BLQ", requestContent);
                 return responsebloq.StatusCode.ToString();
             }
 
