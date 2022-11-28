@@ -152,9 +152,9 @@ namespace RasberryApp
             master.WriteSingleRegister(slaveId, 1, Program.velocidad);
             Console.WriteLine("CAMBIO DE VELOCIDAD");
 
-                port.Close();
-                port.Dispose();
-            }          
+            port.Close();
+            port.Dispose();
+                      
                     
         }
 
