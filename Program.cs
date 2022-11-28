@@ -146,8 +146,7 @@ namespace RasberryApp
 
         public static void ChangeVelocity()
         {
-            if (flagVelocidad)
-            {
+           
                 byte slaveId = 1;
                 port.Open();
                 master.WriteSingleRegister(slaveId, 1, Program.velocidad);
@@ -155,7 +154,7 @@ namespace RasberryApp
 
                 port.Close();
                 port.Dispose();
-            }          
+                   
                     
         }
 
@@ -204,7 +203,6 @@ namespace RasberryApp
                     if (Program.PararRotor)
                     {
                         Console.WriteLine("ROTOR BLOQUEADO");
-                        Console.BackgroundColor = ConsoleColor.Red;
                         controller.Write(pin, PinValue.High);
                         Thread.Sleep(8000);
                         controller.Write(pin, PinValue.Low);
