@@ -55,18 +55,18 @@ namespace RasberryApp
 
 
 
-            Thread CnApi = new Thread(new ThreadStart(ConsultApiAsync));
-            CnApi.Start();
+            //Thread CnApi = new Thread(new ThreadStart(ConsultApiAsync));
+            //CnApi.Start();
 
 
-            Thread RMotor = new Thread(new ThreadStart(RunMotor));
-            RMotor.Start();
+            //Thread RMotor = new Thread(new ThreadStart(RunMotor));
+            //RMotor.Start();
 
-            Thread RotorBloqueado = new Thread(new ThreadStart(StopMotor));
-            RotorBloqueado.Start();
+            //Thread RotorBloqueado = new Thread(new ThreadStart(StopMotor));
+            //RotorBloqueado.Start();
 
-            Thread accion = new Thread(new ThreadStart(UpdateAccion));
-            accion.Start();
+            //Thread accion = new Thread(new ThreadStart(UpdateAccion));
+            //accion.Start();
 
             while (true)
             {
@@ -282,7 +282,7 @@ namespace RasberryApp
             requestContent.Add(new StringContent("NOM"), "modo", "NOM");
 
 
-            HttpResponseMessage response = await httpClient.PostAsync("https://localhost:44393/CargarImagen?modo=NOM", requestContent);
+            HttpResponseMessage response = await httpClient.PostAsync("http://damian16-001-site1.htempurl.com/CargarImagen?modo=NOM", requestContent);
             
 
             if(Program.PararRotor)
