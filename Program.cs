@@ -18,7 +18,7 @@ namespace RasberryApp
         static SerialPort port = new SerialPort();
         public static bool ActEstado { get; set; }
         public static ushort velocidad { get; set; }
-        public static bool flagVelocidad { get; set; }
+        //public static bool flagVelocidad { get; set; }
         public static bool PararRotor { get; set; }
 
         public static SerialPortAdapter adapter = new SerialPortAdapter(port);
@@ -53,7 +53,7 @@ namespace RasberryApp
                 Console.WriteLine("No hay puerto disponible");
             }
 
-            flagVelocidad = false;
+            //flagVelocidad = false;
 
             Thread CnApi = new Thread(new ThreadStart(ConsultApiAsync));
             CnApi.Start();
@@ -123,13 +123,13 @@ namespace RasberryApp
                         }
                         if (responceBloquearRotor.IsSuccessStatusCode)
                         {
-                            flagVelocidad = false;
+                            //flagVelocidad = false;
                             var responseContent = responceBloquearRotor.Content;
                             string responseString = responseContent.ReadAsStringAsync().Result;
                             var objResponse = JsonConvert.DeserializeObject<RespuestaAccionFuente>(responseString).DescripcionAccion;
                             if (objResponse == "Run")
                             {
-                                flagVelocidad = true;
+                                //flagVelocidad = true;
                                 Program.PararRotor = true;
                             }
                         }
@@ -146,16 +146,15 @@ namespace RasberryApp
 
         public static void ChangeVelocity()
         {
-            if (flagVelocidad)
-            {
-                byte slaveId = 1;
-                port.Open();
-                master.WriteSingleRegister(slaveId, 1, Program.velocidad);
-                Console.WriteLine("CAMBIO DE VELOCIDAD");
+            
+            byte slaveId = 1;
+            port.Open();
+            master.WriteSingleRegister(slaveId, 1, Program.velocidad);
+            Console.WriteLine("CAMBIO DE VELOCIDAD");
 
-                port.Close();
-                port.Dispose();
-            }          
+            port.Close();
+            port.Dispose();
+                      
                     
         }
 
@@ -312,16 +311,9 @@ namespace RasberryApp
             string responseBody = await response.Content.ReadAsStringAsync();
             if (response.StatusCode.ToString() == "BadRequest")
             {
-                var objError = JsonConvert.DeserializeObject<MessageError>(responseBody);
-                if (objError.codigoError == "CCTGAC01")
-                {
-                    respuesta = objError.mensajeError.ToString();
-                    return respuesta;
-                }
-                else
-                {
-                    return "Error desconocido";
-                }
+                
+                    return "Error desconocido o no hay acciones";
+
             }
             else
             {
