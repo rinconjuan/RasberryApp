@@ -152,9 +152,9 @@ namespace RasberryApp
             master.WriteSingleRegister(slaveId, 1, Program.velocidad);
             Console.WriteLine("CAMBIO DE VELOCIDAD");
 
-            port.Close();
-            port.Dispose();
-                      
+                port.Close();
+                port.Dispose();
+            }          
                     
         }
 
@@ -203,7 +203,6 @@ namespace RasberryApp
                     if (Program.PararRotor)
                     {
                         Console.WriteLine("ROTOR BLOQUEADO");
-                        Console.BackgroundColor = ConsoleColor.Red;
                         controller.Write(pin, PinValue.High);
                         Thread.Sleep(8000);
                         controller.Write(pin, PinValue.Low);
