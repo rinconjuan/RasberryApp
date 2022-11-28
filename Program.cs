@@ -14,11 +14,11 @@ namespace RasberryApp
     {
 
 
-        static string UrlLocalApi = "http://damian16-001-site1.htempurl.com/GetRun";
+        static string UrlLocalApi = "http://tesisfinal1628-001-site1.ftempurl.com/GetRun";
         static SerialPort port = new SerialPort();
         public static bool ActEstado { get; set; }
         public static ushort velocidad { get; set; }
-
+        public static bool flagVelocidad { get; set; }
         public static bool PararRotor { get; set; }
 
         public static SerialPortAdapter adapter = new SerialPortAdapter(port);
@@ -53,7 +53,7 @@ namespace RasberryApp
                 Console.WriteLine("No hay puerto disponible");
             }
 
-
+            flagVelocidad = false;
 
             Thread CnApi = new Thread(new ThreadStart(ConsultApiAsync));
             CnApi.Start();
@@ -84,8 +84,8 @@ namespace RasberryApp
                     try
                     {
                         var response = client.GetAsync(UrlLocalApi).Result;
-                        var responcevelocidad = client.GetAsync("http://damian16-001-site1.htempurl.com/GetVelocidad").Result;
-                        var responceBloquearRotor = client.GetAsync("http://damian16-001-site1.htempurl.com/GetAccionSource").Result;
+                        var responcevelocidad = client.GetAsync("http://tesisfinal1628-001-site1.ftempurl.com/GetVelocidad").Result;
+                        var responceBloquearRotor = client.GetAsync("http://tesisfinal1628-001-site1.ftempurl.com/GetAccionSource").Result;
                         if (response.IsSuccessStatusCode)
                         {
                             var responseContent = response.Content;                            
@@ -123,11 +123,13 @@ namespace RasberryApp
                         }
                         if (responceBloquearRotor.IsSuccessStatusCode)
                         {
+                            flagVelocidad = false;
                             var responseContent = responceBloquearRotor.Content;
                             string responseString = responseContent.ReadAsStringAsync().Result;
                             var objResponse = JsonConvert.DeserializeObject<RespuestaAccionFuente>(responseString).DescripcionAccion;
                             if (objResponse == "Run")
                             {
+                                flagVelocidad = true;
                                 Program.PararRotor = true;
                             }
                         }
@@ -144,13 +146,16 @@ namespace RasberryApp
 
         public static void ChangeVelocity()
         {
-            byte slaveId = 1;
-            port.Open();
-            master.WriteSingleRegister(slaveId, 1, Program.velocidad);
-            Console.WriteLine("CAMBIO DE VELOCIDAD");
+            if (flagVelocidad)
+            {
+                byte slaveId = 1;
+                port.Open();
+                master.WriteSingleRegister(slaveId, 1, Program.velocidad);
+                Console.WriteLine("CAMBIO DE VELOCIDAD");
 
-            port.Close();
-            port.Dispose();
+                port.Close();
+                port.Dispose();
+            }          
                     
         }
 
@@ -224,7 +229,7 @@ namespace RasberryApp
             using var requestContent = new MultipartFormDataContent();            
 
             requestContent.Add(new StringContent("Stop"));
-            HttpResponseMessage response = await httpClient.PostAsync("http://damian16-001-site1.htempurl.com/ManagementSource", requestContent);
+            HttpResponseMessage response = await httpClient.PostAsync("http://tesisfinal1628-001-site1.ftempurl.com/ManagementSource", requestContent);
             Program.PararRotor = false;
         }
 
@@ -232,7 +237,7 @@ namespace RasberryApp
         static async Task RunAsync()
         {
             HttpClient client = new HttpClient();
-            client.BaseAddress = new Uri("http://damian16-001-site1.htempurl.com/");
+            client.BaseAddress = new Uri("http://tesisfinal1628-001-site1.ftempurl.com/");
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Accept.Add(
                 new MediaTypeWithQualityHeaderValue("application/json"));
@@ -282,7 +287,7 @@ namespace RasberryApp
             requestContent.Add(new StringContent("NOM"), "modo", "NOM");
 
 
-            HttpResponseMessage response = await httpClient.PostAsync("http://damian16-001-site1.htempurl.com/CargarImagen?modo=NOM", requestContent);
+            HttpResponseMessage response = await httpClient.PostAsync("http://tesisfinal1628-001-site1.ftempurl.com/CargarImagen?modo=NOM", requestContent);
             
 
             if(Program.PararRotor)
@@ -291,7 +296,7 @@ namespace RasberryApp
                 requestContent.Add(new StreamContent(fileStream), "fileup", fileName);
                 requestContent.Add(new StringContent("BLQ"), "modo", "BLQ");
 
-                HttpResponseMessage responsebloq = await httpClient.PostAsync("http://damian16-001-site1.htempurl.com/CargarImagen?modo=BLQ", requestContent);
+                HttpResponseMessage responsebloq = await httpClient.PostAsync("http://tesisfinal1628-001-site1.ftempurl.com/CargarImagen?modo=BLQ", requestContent);
                 return responsebloq.StatusCode.ToString();
             }
 
@@ -303,7 +308,7 @@ namespace RasberryApp
             string respuesta = "";
             Console.WriteLine("Leyendo Accion..");
             HttpClient httpClient = new HttpClient();
-            HttpResponseMessage response = await httpClient.GetAsync("http://damian16-001-site1.htempurl.com/Acciones");
+            HttpResponseMessage response = await httpClient.GetAsync("http://tesisfinal1628-001-site1.ftempurl.com/Acciones");
             string responseBody = await response.Content.ReadAsStringAsync();
             if (response.StatusCode.ToString() == "BadRequest")
             {
