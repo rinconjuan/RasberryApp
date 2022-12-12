@@ -307,8 +307,8 @@ namespace RasberryApp
             string responseBody = await response.Content.ReadAsStringAsync();
             if (response.StatusCode.ToString() == "BadRequest")
             {
-                    respuesta = "Error desconocido o no hay acciones";
-                    return respuesta
+                respuesta = "Error desconocido o no hay acciones";
+                return respuesta;
 
             }
             else
