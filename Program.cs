@@ -59,14 +59,14 @@ namespace RasberryApp
             CnApi.Start();
 
 
-            Thread RMotor = new Thread(new ThreadStart(RunMotor));
-            RMotor.Start();
+            //Thread RMotor = new Thread(new ThreadStart(RunMotor));
+            //RMotor.Start();
 
-            Thread RotorBloqueado = new Thread(new ThreadStart(StopMotor));
-            RotorBloqueado.Start();
+            //Thread RotorBloqueado = new Thread(new ThreadStart(StopMotor));
+            //RotorBloqueado.Start();
 
-            Thread accion = new Thread(new ThreadStart(UpdateAccion));
-            accion.Start();
+            //Thread accion = new Thread(new ThreadStart(UpdateAccion));
+            //accion.Start();
 
             while (true)
             {
@@ -213,10 +213,10 @@ namespace RasberryApp
 
                     }
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     Console.WriteLine("Error al bloquear el rotor");
-                }               
+                }
 
             }
         }
@@ -282,8 +282,6 @@ namespace RasberryApp
             Console.BackgroundColor = ConsoleColor.Green;
 
             requestContent.Add(new StreamContent(fileStream), "fileup", fileName);
-            requestContent.Add(new StringContent("NOM"), "modo", "NOM");
-
 
             HttpResponseMessage response = await httpClient.PostAsync("http://tesisfinal1628-001-site1.ftempurl.com/CargarImagen?modo=NOM", requestContent);
             
@@ -292,7 +290,6 @@ namespace RasberryApp
             {
                 Console.WriteLine("IMAGEN REGISTROS");
                 requestContent.Add(new StreamContent(fileStream), "fileup", fileName);
-                requestContent.Add(new StringContent("BLQ"), "modo", "BLQ");
 
                 HttpResponseMessage responsebloq = await httpClient.PostAsync("http://tesisfinal1628-001-site1.ftempurl.com/CargarImagen?modo=BLQ", requestContent);
                 return responsebloq.StatusCode.ToString();
