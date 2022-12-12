@@ -14,7 +14,7 @@ namespace RasberryApp
     {
 
 
-        static string UrlLocalApi = "http://tesisfinal1628-001-site1.ftempurl.com/GetRun";
+        static string UrlLocalApi = "http://apites-001-site1.atempurl.com/GetRun";
         static SerialPort port = new SerialPort();
         public static bool ActEstado { get; set; }
         public static ushort velocidad { get; set; }
@@ -58,21 +58,24 @@ namespace RasberryApp
             Thread CnApi = new Thread(new ThreadStart(ConsultApiAsync));
             CnApi.Start();
 
+            Thread UpdateImagen = new Thread(new ThreadStart(SubidaImagen));
+            UpdateImagen.Start();
 
-            //Thread RMotor = new Thread(new ThreadStart(RunMotor));
-            //RMotor.Start();
 
-            //Thread RotorBloqueado = new Thread(new ThreadStart(StopMotor));
-            //RotorBloqueado.Start();
+            Thread RMotor = new Thread(new ThreadStart(RunMotor));
+            RMotor.Start();
 
-            //Thread accion = new Thread(new ThreadStart(UpdateAccion));
-            //accion.Start();
+            Thread RotorBloqueado = new Thread(new ThreadStart(StopMotor));
+            RotorBloqueado.Start();
 
-            while (true)
-            {
-                //ConsultApiAsync().GetAwaiter().GetResult();
-                RunAsync().GetAwaiter().GetResult();
-            }
+            Thread accion = new Thread(new ThreadStart(UpdateAccion));
+            accion.Start();
+
+            //while (true)
+            //{
+            //    //ConsultApiAsync().GetAwaiter().GetResult();
+            //    RunAsync().GetAwaiter().GetResult();
+            //}
         }
         public static void ConsultApiAsync()
         {
@@ -84,8 +87,8 @@ namespace RasberryApp
                     try
                     {
                         var response = client.GetAsync(UrlLocalApi).Result;
-                        var responcevelocidad = client.GetAsync("http://tesisfinal1628-001-site1.ftempurl.com/GetVelocidad").Result;
-                        var responceBloquearRotor = client.GetAsync("http://tesisfinal1628-001-site1.ftempurl.com/GetAccionSource").Result;
+                        var responcevelocidad = client.GetAsync("http://apites-001-site1.atempurl.com/GetVelocidad").Result;
+                        var responceBloquearRotor = client.GetAsync("http://apites-001-site1.atempurl.com/GetAccionSource").Result;
                         if (response.IsSuccessStatusCode)
                         {
                             var responseContent = response.Content;                            
@@ -227,24 +230,19 @@ namespace RasberryApp
             using var requestContent = new MultipartFormDataContent();            
 
             requestContent.Add(new StringContent("Stop"));
-            HttpResponseMessage response = await httpClient.PostAsync("http://tesisfinal1628-001-site1.ftempurl.com/ManagementSource", requestContent);
+            HttpResponseMessage response = await httpClient.PostAsync("http://apites-001-site1.atempurl.com/ManagementSource", requestContent);
             Program.PararRotor = false;
         }
 
 
         static async Task RunAsync()
-        {
-            HttpClient client = new HttpClient();
-            client.BaseAddress = new Uri("http://tesisfinal1628-001-site1.ftempurl.com/");
-            client.DefaultRequestHeaders.Accept.Clear();
-            client.DefaultRequestHeaders.Accept.Add(
-                new MediaTypeWithQualityHeaderValue("application/json"));
+        {          
 
             try
             {
                 Console.WriteLine($"Subiendo Imagen...");
                 var url = await CreateProductAsync();
-                Console.WriteLine($"Respuesta Servidor {url}");
+                Console.WriteLine($"respuesta Subida Imagen =  {url}");
                 System.Threading.Thread.Sleep(1000);
             }
             catch (Exception e)
@@ -253,49 +251,115 @@ namespace RasberryApp
             }
         }
 
+        public static void SubidaImagen()
+        {
+            var subidaImagen = SubirImagenAsync();
+            subidaImagen.Wait();
 
+        }
+
+        static async Task SubirImagenAsync()
+        {
+            while (true)
+            {
+                var pathGeneral = AppDomain.CurrentDomain.BaseDirectory;
+                var imgName = pathGeneral + "file.bmp";
+
+                try
+                {
+                    using (WebClient webClient = new WebClient())
+                    {
+                        if (File.Exists(imgName))
+                            File.Delete(imgName);
+                        var routCircutor = "http://169.254.1.49:502/tft.bmp?" + DateTime.Now.Ticks.ToString();
+                        byte[] data = webClient.DownloadData(routCircutor);
+                        File.WriteAllBytes(imgName, data);                        
+
+                    }
+
+                    var fileRout = imgName;
+                    var fileName = Path.GetFileName(fileRout);
+
+                    HttpClient httpClient = new HttpClient();
+                    using var requestContent = new MultipartFormDataContent();
+                    using var fileStream = File.OpenRead(fileRout);
+
+
+                    requestContent.Add(new StreamContent(fileStream), "fileup", fileName);
+                    requestContent.Add(new StringContent("NOM"), "modo", "NOM");
+
+                    HttpResponseMessage response = await httpClient.PostAsync("http://apites-001-site1.atempurl.com/CargarImagen?modo=NOM", requestContent);
+                    Console.WriteLine("respuesta api imagen = " + response.Content.ReadAsStringAsync().Result);
+                    
+
+
+                    if (Program.PararRotor)
+                    {
+
+                        requestContent.Add(new StreamContent(fileStream), "fileup", fileName);
+                        requestContent.Add(new StringContent("BLQ"), "modo", "BLQ");
+                        HttpResponseMessage responsebloq = await httpClient.PostAsync("http://apites-001-site1.atempurl.com/CargarImagen?modo=BLQ", requestContent);
+                        
+                    }
+
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine("Error al Subir Imagen");
+                }
+            }
+            
+        }
         static async Task<string> CreateProductAsync()
         {
             var pathGeneral = AppDomain.CurrentDomain.BaseDirectory;
             var imgName = pathGeneral + "file.bmp";
 
-            using (WebClient webClient = new WebClient())
+            try
             {
-                if (File.Exists(imgName))
-                    File.Delete(imgName);
-                var routCircutor = "http://169.254.1.49:502/tft.bmp?" + DateTime.Now.Ticks.ToString();
-                byte[] data = webClient.DownloadData(routCircutor);
-                File.WriteAllBytes(imgName, data);
-                Console.WriteLine("Data imagen" + data[0].ToString()); ;
+                using (WebClient webClient = new WebClient())
+                {
+                    if (File.Exists(imgName))
+                        File.Delete(imgName);
+                    var routCircutor = "http://169.254.1.49:502/tft.bmp?" + DateTime.Now.Ticks.ToString();
+                    byte[] data = webClient.DownloadData(routCircutor);
+                    File.WriteAllBytes(imgName, data);
+                    Console.WriteLine("Data imagen" + data[0].ToString()); ;
 
-            }
+                }
 
-            var fileRout = imgName;
-            var fileName = Path.GetFileName(fileRout);
+                var fileRout = imgName;
+                var fileName = Path.GetFileName(fileRout);
 
-            HttpClient httpClient = new HttpClient();
-            using var requestContent = new MultipartFormDataContent();
-            using var fileStream = File.OpenRead(fileRout);
+                HttpClient httpClient = new HttpClient();
+                using var requestContent = new MultipartFormDataContent();
+                using var fileStream = File.OpenRead(fileRout);
 
-            
-            
-            Console.BackgroundColor = ConsoleColor.Green;
 
-            requestContent.Add(new StreamContent(fileStream), "fileup", fileName);
-
-            HttpResponseMessage response = await httpClient.PostAsync("http://tesisfinal1628-001-site1.ftempurl.com/CargarImagen?modo=NOM", requestContent);
-            
-
-            if(Program.PararRotor)
-            {
-                Console.WriteLine("IMAGEN REGISTROS");
                 requestContent.Add(new StreamContent(fileStream), "fileup", fileName);
+                requestContent.Add(new StringContent("NOM"), "modo", "NOM");
 
-                HttpResponseMessage responsebloq = await httpClient.PostAsync("http://tesisfinal1628-001-site1.ftempurl.com/CargarImagen?modo=BLQ", requestContent);
-                return responsebloq.StatusCode.ToString();
+                HttpResponseMessage response = await httpClient.PostAsync("http://tesisfinal1628-001-site1.ftempurl.com/CargarImagen?modo=NOM", requestContent);
+                Console.WriteLine("IMAGEN NORMAL");
+
+
+                if (Program.PararRotor)
+                {
+                    
+                    requestContent.Add(new StreamContent(fileStream), "fileup", fileName);
+                    requestContent.Add(new StringContent("BLQ"), "modo", "BLQ");
+                    HttpResponseMessage responsebloq = await httpClient.PostAsync("http://tesisfinal1628-001-site1.ftempurl.com/CargarImagen?modo=BLQ", requestContent);
+                    Console.WriteLine("IMAGEN REGISTROS");
+                    return responsebloq.StatusCode.ToString();
+                }
+
+                return response.StatusCode.ToString();
             }
-
-            return response.StatusCode.ToString();
+            catch (Exception)
+            {
+                return "Error Al subir imagen";
+            }
+            
         }
 
         static async Task<string> ReadAccion()
@@ -303,9 +367,9 @@ namespace RasberryApp
             string respuesta = "";
             Console.WriteLine("Leyendo Accion..");
             HttpClient httpClient = new HttpClient();
-            HttpResponseMessage response = await httpClient.GetAsync("http://tesisfinal1628-001-site1.ftempurl.com/Acciones");
+            HttpResponseMessage response = await httpClient.GetAsync("http://apites-001-site1.atempurl.com/Acciones");
             string responseBody = await response.Content.ReadAsStringAsync();
-            if (response.StatusCode.ToString() == "BadRequest")
+            if (!response.IsSuccessStatusCode)
             {
                 respuesta = "Error desconocido o no hay acciones";
                 return respuesta;
