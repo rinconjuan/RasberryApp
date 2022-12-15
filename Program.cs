@@ -126,7 +126,6 @@ namespace RasberryApp
                         }
                         if (responceBloquearRotor.IsSuccessStatusCode)
                         {
-                            //flagVelocidad = false;
                             var responseContent = responceBloquearRotor.Content;
                             string responseString = responseContent.ReadAsStringAsync().Result;
                             var objResponse = JsonConvert.DeserializeObject<RespuestaAccionFuente>(responseString).DescripcionAccion;
@@ -280,6 +279,8 @@ namespace RasberryApp
 
                     HttpClient httpClient = new HttpClient();
                     using var requestContent = new MultipartFormDataContent();
+                    using var requestContentblq = new MultipartFormDataContent();
+
                     using var fileStream = File.OpenRead(fileRout);
 
 
@@ -292,8 +293,8 @@ namespace RasberryApp
 
                     if (Program.PararRotor)
                     {
-                        requestContent.Add(new StreamContent(fileStream), "fileup", fileName);
-                        requestContent.Add(new StringContent("BLQ"), "modo", "BLQ");
+                        requestContentblq.Add(new StreamContent(fileStream), "fileup", fileName);
+                        requestContentblq.Add(new StringContent("BLQ"), "modo", "BLQ");
                         HttpResponseMessage responsebloq = await httpClient.PostAsync("http://apites-001-site1.atempurl.com/CargarImagen?modo=BLQ", requestContent);
                     }                   
 
