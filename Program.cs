@@ -132,7 +132,6 @@ namespace RasberryApp
                             var objResponse = JsonConvert.DeserializeObject<RespuestaAccionFuente>(responseString).DescripcionAccion;
                             if (objResponse == "Run")
                             {
-                                //flagVelocidad = true;
                                 Program.PararRotor = true;
                             }
                         }
@@ -293,14 +292,13 @@ namespace RasberryApp
                     
 
 
-                    if (Program.PararRotor)
-                    {
+                    
 
-                        requestContent.Add(new StreamContent(fileStream), "fileup", fileName);
-                        requestContent.Add(new StringContent("BLQ"), "modo", "BLQ");
-                        HttpResponseMessage responsebloq = await httpClient.PostAsync("http://apites-001-site1.atempurl.com/CargarImagen?modo=BLQ", requestContent);
+                    requestContent.Add(new StreamContent(fileStream), "fileup", fileName);
+                    requestContent.Add(new StringContent("BLQ"), "modo", "BLQ");
+                    HttpResponseMessage responsebloq = await httpClient.PostAsync("http://apites-001-site1.atempurl.com/CargarImagen?modo=BLQ", requestContent);
                         
-                    }
+                   
 
                 }
                 catch (Exception)
