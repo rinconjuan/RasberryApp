@@ -209,10 +209,9 @@ namespace RasberryApp
                         Thread.Sleep(8000);
                         controller.Write(pin, PinValue.Low);
                         var finPrueba = ManagementSourceAsync();
-                        finPrueba.Wait();
-                        Program.PararRotor = false;
+                        finPrueba.Wait();                        
                         Console.WriteLine("ROTOR DESBLOQUEADO");
-
+                        Program.PararRotor = false;
                     }
                 }
                 catch (Exception ex)
@@ -289,16 +288,14 @@ namespace RasberryApp
 
                     HttpResponseMessage response = await httpClient.PostAsync("http://apites-001-site1.atempurl.com/CargarImagen?modo=NOM", requestContent);
                     Console.WriteLine("respuesta api imagen = " + response.Content.ReadAsStringAsync().Result);
-                    
 
 
-                    
-
-                    requestContent.Add(new StreamContent(fileStream), "fileup", fileName);
-                    requestContent.Add(new StringContent("BLQ"), "modo", "BLQ");
-                    HttpResponseMessage responsebloq = await httpClient.PostAsync("http://apites-001-site1.atempurl.com/CargarImagen?modo=BLQ", requestContent);
-                        
-                   
+                    if (Program.PararRotor)
+                    {
+                        requestContent.Add(new StreamContent(fileStream), "fileup", fileName);
+                        requestContent.Add(new StringContent("BLQ"), "modo", "BLQ");
+                        HttpResponseMessage responsebloq = await httpClient.PostAsync("http://apites-001-site1.atempurl.com/CargarImagen?modo=BLQ", requestContent);
+                    }                   
 
                 }
                 catch (Exception)
